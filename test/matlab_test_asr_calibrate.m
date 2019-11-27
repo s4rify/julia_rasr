@@ -1,7 +1,7 @@
 % asr julia tests
 
 % make sure we use the same input
-X = csvread('C:\Users\sarah\Documents\PhD\Julia\data.csv');
+X = csvread('C:\Users\sarah\Documents\PhD\Julia_rASR\test\data.csv');
 srate = 250;
 
 % define some default parameters
@@ -33,18 +33,15 @@ Y = filter(B,A,double(X),[],2);
 % estimate a covariance matrix
 U = (1/S) * (Y*Y')
 
-% compute mixing matrix
-M = sqrtm(U)
-
 % decompose mixing matrix
-[V,D] = eig(M)
+[V,D] = eig(U)
 
 % project input data into component space
 Y = abs(Y'*V)
 for c = C:-1:1
     % compute RMS amplitude for each window...
     rms = Y(:,c).^2;
-    rms1 = sqrt(sum(rms(bsxfun(@plus,round(1:N*(1-window_overlap):S-N),(0:N-1)')))/N);
+    rms = sqrt(sum(rms(bsxfun(@plus,round(1:N*(1-window_overlap):S-N),(0:N-1)')))/N);
     % fit a distribution to the clean part
     [mu(c),sig(c)] = fit_eeg_distribution(rms,min_clean_fraction,max_dropout_fraction);
 end

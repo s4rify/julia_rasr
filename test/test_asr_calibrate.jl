@@ -4,7 +4,14 @@
 using CSV
 using DataFrames
 
-X = CSV.read("./data.csv"; header=false)
+# example data stored in data.csv
+filename = "data.csv"
+filepath = joinpath(@__DIR__, filename)
+println(filepath)
+# import data
+X = CSV.read(filepath; header=false)
+# and convert to array
 X = convert(Array, X)
 
+# fix this value for now
 srate = 250

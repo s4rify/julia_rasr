@@ -1,4 +1,4 @@
-function fit_eeg_distribution(X)
+function fit_eeg_distribution(X, min_clean_fraction, max_dropout_fraction)
 # Estimate the mean and standard deviation of clean EEG from contaminated data.
 # [Mu,Sigma,Alpha,Beta] = fit_eeg_distribution(X,MinCleanFraction,MaxDropoutFraction,FitQuantiles,StepSizes,ShapeRange)
 #
@@ -28,17 +28,6 @@ function fit_eeg_distribution(X)
 #
 #   MaxDropoutFraction : Maximum fraction of values in X that can be subject to
 #                        signal dropouts (e.g., sensor unplugged) (default: 0.1)
-#
-#   FitQuantiles : Quantile range [lower,upper] of the truncated generalized Gaussian distribution
-#                  that shall be fit to the EEG contents (default: [0.022 0.6])
-#
-#   StepSizes : Step size of the grid search; the first value is the stepping of the lower bound
-#               (which essentially steps over any dropout samples), and the second value
-#               is the stepping over possible scales (i.e., clean-data quantiles)
-#               (default: [0.01 0.01])
-#
-#   ShapeRange : Range that the clean EEG distribution's shape parameter beta may take (default:
-#                1.7:0.15:3.5)
 #
 # Out:
 #   Mu : estimated mean of the clean EEG distribution

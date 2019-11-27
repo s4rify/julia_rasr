@@ -5,6 +5,7 @@ function asr_calibrate(X, srate)
   using PosDefManifold
   using DSP
   using Plots
+  using LinearAlgebra
 
   # determine size of input, channels and samples
   C = size(X,1)
@@ -43,29 +44,25 @@ function asr_calibrate(X, srate)
   # compute estimator for covariance matrix
   U = (1/S) * (X * X')
 
-  # get mixing matrix (TODO or maybe not?)
-  M = sqrt(U)
+  # mixing matrix is equivalent to using the covariance matrix directly
+  # M = sqrt(U)
 
-  # decompose M using PCA for now
-  F = eigen(M)
-  V = F.vectors
-  D = F.values
-  # eigenvectors should be sorted by increasing eigenvectors already
+  # decompose covariance matrix using PCA (this could be nonlinear decomposition as well)
+  V = eigvecs(U)
 
   # project input data into component space (TODO why abs here, squaring anyway afterwards..)
   X = broadcast(abs, (X'*V))
 
-  using MATLAB
   # for every channel, compute rms and stats to define the threshold matrix
   for c in [C:-1:1]
       # compute RMS amplitude for each window...
       rms = X[:,c].^2
-
-      indices = round.([1:(N*(1-window_overlap)):(S-N);])' +  [0:(N-1);]'
-
-      rms = sqrt(sum(rms(bsxfun(@plus,round(1:N*(1-window_overlap):S-N),(0:N-1)')))/N);
+      indices = round.([1:(N*(1-window_overlap)):(S-N);])' .+  [0:(N-1);]
+      rms = sqrt.(sum(rms[Int.(indices)], dims=1) ./ N)
       # fit a distribution to the clean part
-      [mu(c),sig(c)] = fit_eeg_distribution(rms,min_clean_fraction,max_dropout_fraction);
+      out = fit_eeg_distribution(rms,min_clean_fraction,max_dropout_fraction);
+      out[0] = mu(c)
+      out[1] = sig[c]
   end
 
   T = diag(mu + cutoff*sig)*V';
