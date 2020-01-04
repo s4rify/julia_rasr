@@ -50,36 +50,31 @@ function [mu,sig,alpha,beta] = fit_eeg_distribution(X,min_clean_fraction,max_dro
 %   Beta : estimated shape parameter of the generalized Gaussian clean EEG distribution (optional)
 
 % assign defaults
-if ~exist('min_clean_fraction','var') || isempty(min_clean_fraction)
-    min_clean_fraction = 0.25; end
-if ~exist('max_dropout_fraction','var') || isempty(max_dropout_fraction)
-    max_dropout_fraction = 0.1; end
-if ~exist('quants','var') || isempty(quants)
-    quants = [0.022 0.6]; end %[0.022 0.6]
-if ~exist('step_sizes','var') || isempty(step_sizes)
-    step_sizes = [0.01 0.01]; end
-if ~exist('beta','var') || isempty(beta)
-    beta = 1.7:0.15:3.5; end
-
-% sanity checks
-if ~isvector(quants) || numel(quants) > 2
-    error('Fit quantiles needs to be a 2-element vector (support for matrices deprecated).'); end
-if any(quants(:)<0) || any(quants(:)>1)
-    error('Unreasonable fit quantiles.'); end
-if any(step_sizes<0.0001) || any(step_sizes>0.1)
-    error('Unreasonable step sizes.'); end
-if any(beta>=7) || any(beta<=1)
-    error('Unreasonable shape range.'); end
+min_clean_fraction = 0.25; 
+max_dropout_fraction = 0.1; 
+quants = [0.022 0.6]; 
+step_sizes = [0.01 0.01];
+beta = 1.7:0.15:3.5;
 
 % sort data so we can access quantiles directly
 X = double(sort(X(:)));
 n = length(X);
 
 % calc z bounds for the truncated standard generalized Gaussian pdf and pdf rescaler
-for b=1:length(beta)    
-    zbounds{b} = sign(quants-1/2).*gammaincinv(sign(quants-1/2).*(2*quants-1),1/beta(b)).^(1/beta(b)); %#ok<*AGROW>
+for b=1:length(beta) 
+    ypsilon = sign(quants-1/2).*(2*quants-1)
+    aa = 1/beta(b)
+   
+    zbounds{b} = sign(quants-1/2) .* gammaincinv(ypsilon,aa) .^ (1/beta(b)); %#ok<*AGROW>
     rescale(b) = beta(b)/(2*gamma(1/beta(b)));
 end
+
+
+% % calc z bounds for the truncated standard generalized Gaussian pdf and pdf rescaler
+% for b=1:length(beta)    
+%     zbounds{b} = sign(quants-1/2).*gammaincinv(sign(quants-1/2).*(2*quants-1),1/beta(b)).^(1/beta(b)); %#ok<*AGROW>
+%     rescale(b) = beta(b)/(2*gamma(1/beta(b)));
+% end
 
 % determine the quantile-dependent limits for the grid search
 lower_min = min(quants);                    % we can generally skip the tail below the lower quantile

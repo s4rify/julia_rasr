@@ -9,6 +9,7 @@ filename = "data.csv"
 filepath = joinpath(@__DIR__, filename)
 println(filepath)
 # import data
+println("reading file..")
 X = CSV.read(filepath; header=false)
 # and convert to array
 X = convert(Array, X)

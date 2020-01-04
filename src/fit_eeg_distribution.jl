@@ -48,18 +48,23 @@ max_dropout_fraction = 0.1
 quants = [0.022, 0.6]
 step_sizes = [0.01, 0.01]
 beta = [1.7:0.15:3.5;]'
-
-
+zbounds = Array{Float64, 2}(undef, length(beta), 2)
+rescale = zeros(1,length(beta))
 # sort data so we can access quantiles directly
 X = sort(X[:])
 n = length(X)
 
 # calc z bounds for the truncated standard generalized Gaussian pdf and pdf rescaler
 for b=1:length(beta)
-    gamma_x = sign.(quants .- 0.5) .* (2 .* quants .- 1)
-    gamma_a = 1 ./ beta[b]
-    zbounds{b} = sign.(quants.- 0.5) .* gamma_inc(gamma_a, gamma_x') .^ (1/beta(b))
-    rescale(b) = beta(b)/(2*gamma(1/beta(b)));
+    y = sign.(quants .- 0.5) .* (2 .* quants .- 1)
+    aa = 1 ./ beta[b]
+    # inspect function source: @edit gamma_inc_inv(0.5,0.5,0.5)
+    gamma_1 = gamma_inc_inv(aa, y[2], y[2])
+    gamma_2 = gamma_inc_inv(aa, y[1], 1-y[1])
+    g = [gamma_2, gamma_1]
+
+    zbounds[b,:] = sign.(quants.- 0.5) .* g .^ (1/beta[b])
+    rescale[b] = beta[b]/(2*gamma(1/beta[b]))
 end
 
 % determine the quantile-dependent limits for the grid search

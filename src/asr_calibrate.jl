@@ -4,7 +4,7 @@ function asr_calibrate(X, srate)
   # import libraries
   using PosDefManifold
   using DSP
-  using Plots
+  #using Plots
   using LinearAlgebra
 
   # determine size of input, channels and samples
@@ -55,13 +55,14 @@ function asr_calibrate(X, srate)
 
   # for every channel, compute rms and stats to define the threshold matrix
   for c in [C:-1:1]
+    c=1
       # compute RMS amplitude for each window...
       rms = X[:,c].^2
       indices = round.([1:(N*(1-window_overlap)):(S-N);])' .+  [0:(N-1);]
       rms = sqrt.(sum(rms[Int.(indices)], dims=1) ./ N)
       # fit a distribution to the clean part
-      out = fit_eeg_distribution(rms,min_clean_fraction,max_dropout_fraction);
-      out[0] = mu(c)
+      out = fit_eeg_distribution(rms,min_clean_fraction,max_dropout_fraction)
+      out[0] = mu[c]
       out[1] = sig[c]
   end
 
