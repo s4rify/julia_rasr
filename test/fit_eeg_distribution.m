@@ -82,8 +82,9 @@ max_width = diff(quants);                   % maximum width is the fit interval 
 min_width = min_clean_fraction*max_width;   % minimum width of the fit interval, as fraction of data
 
 % get matrix of shifted data ranges
-X = X(bsxfun(@plus,(1:round(n*max_width))',round(n*(lower_min:step_sizes(1):lower_min+max_dropout_fraction))));
-X1 = X(1,:); X = bsxfun(@minus,X,X1);
+X = X(bsxfun(@plus,(1 : round(n*max_width))',round(n*(lower_min:step_sizes(1) : lower_min+max_dropout_fraction))));
+X1 = X(1,:); 
+X = bsxfun(@minus,X,X1);
 
 opt_val = Inf;
 % for each interval width...

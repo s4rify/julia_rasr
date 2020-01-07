@@ -42,6 +42,7 @@ function fit_eeg_distribution(X, min_clean_fraction, max_dropout_fraction)
 
 # this package includes inverse gamma function and others
 using SpecialFunctions
+using StatsBase
 
 min_clean_fraction = 0.25
 max_dropout_fraction = 0.1
@@ -67,34 +68,50 @@ for b=1:length(beta)
     rescale[b] = beta[b]/(2*gamma(1/beta[b]))
 end
 
-% determine the quantile-dependent limits for the grid search
-lower_min = min(quants);                    % we can generally skip the tail below the lower quantile
-max_width = diff(quants);                   % maximum width is the fit interval if all data is clean
-min_width = min_clean_fraction*max_width;   % minimum width of the fit interval, as fraction of data
+# determine the quantile-dependent limits for the grid search
+lower_min = minimum(quants)
+max_width = diff(quants)
+min_width = min_clean_fraction*max_width
 
-% get matrix of shifted data ranges
-X = X(bsxfun(@plus,(1:round(n*max_width))',round(n*(lower_min:step_sizes(1):lower_min+max_dropout_fraction))));
-X1 = X(1,:); X = bsxfun(@minus,X,X1);
+# get matrix of shifted data ranges
+indexrange = ((1 : round(n*max_width[1]))' .+ round.(n*(lower_min:step_sizes[1]:lower_min+max_dropout_fraction)))
+indexrange = Int64.(indexrange)
+X = X[indexrange]
+X = X' # to stay compatible with matlab
+X1 = X[1,:]
+X = X .- X1'
 
-opt_val = Inf;
-% for each interval width...
-for m = round(n*(max_width:-step_sizes(2):min_width))
-    % scale and bin the data in the intervals
-    nbins = round(3*log2(1+m/2));
-    H = bsxfun(@times,X(1:m,:),nbins./X(m,:));
-    logq = log(histc(H,[0:nbins-1,Inf]) + 0.01);
+opt_val = Inf
+# for each interval width...
+for m in [n .* collect(range(max_width[1], step=-step_sizes[2], stop=min_width[1]))]
+    # scale and bin the data in the intervals
+    nbins = round.(3*log2.(1 .+ m/2))
+    H = X[Int64.(1:m),:] .* (nbins ./ X[Int64(m),:])'
 
-    % for each shape value...
+    # the histogram counts are computed in a loop here
+    edges = [0:nbins-1; Inf]
+    #all_weights = Array{Float64, 2}(undef, size(edges)[1], size(H)[2])
+    logq = Array{Float64, 2}(undef, size(edges)[1], size(H)[2])
+    for w in 1:size(H)[2]
+        hw = fit(Histogram, H[:,w], edges)
+        # the implementation of histc in matlab slightly varies from julia and returns one extra value which
+        # is always zero here bc. the last edge is defined as Inf. Just add this extra zero manually for now
+        push!(hw.weights, 0.0)
+        #all_weights[:,w] = hw.weights
+        logq[:,w] = log.(hw.weights .+ 0.01)
+    end
+
+    # for each shape value...
     for b=1:length(beta)
         bounds = zbounds{b};
-        % evaluate truncated generalized Gaussian pdf at bin centers
+        # evaluate truncated generalized Gaussian pdf at bin centers
         x = bounds(1)+(0.5:(nbins-0.5))/nbins*diff(bounds);
         p = exp(-abs(x).^beta(b))*rescale(b); p=p'/sum(p);
 
-        % calc KL divergences
+        # calc KL divergences
         kl = sum(bsxfun(@times,p,bsxfun(@minus,log(p),logq(1:end-1,:)))) + log(m);
 
-        % update optimal parameters
+        # update optimal parameters
         [min_val,idx] = min(kl);
         if min_val < opt_val
             opt_val = min_val;
