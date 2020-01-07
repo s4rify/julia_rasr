@@ -99,7 +99,8 @@ for m = round(n*(max_width:-step_sizes(2):min_width))
         bounds = zbounds{b};
         % evaluate truncated generalized Gaussian pdf at bin centers
         x = bounds(1)+(0.5:(nbins-0.5))/nbins*diff(bounds);
-        p = exp(-abs(x).^beta(b))*rescale(b); p=p'/sum(p);
+        p = exp(-abs(x).^beta(b))*rescale(b); 
+        p=p'/sum(p);
         
         % calc KL divergences
         kl = sum(bsxfun(@times,p,bsxfun(@minus,log(p),logq(1:end-1,:)))) + log(m);

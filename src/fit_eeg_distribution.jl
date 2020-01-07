@@ -102,33 +102,36 @@ for m in [n .* collect(range(max_width[1], step=-step_sizes[2], stop=min_width[1
     end
 
     # for each shape value...
-    for b=1:length(beta)
-        bounds = zbounds{b};
+    for b in (1:length(beta))
+        bounds = zbounds[b,:];
         # evaluate truncated generalized Gaussian pdf at bin centers
-        x = bounds(1)+(0.5:(nbins-0.5))/nbins*diff(bounds);
-        p = exp(-abs(x).^beta(b))*rescale(b); p=p'/sum(p);
+        x = bounds[1] .+ (0.5:(nbins-0.5)) ./ nbins .* diff(bounds)
+        p = exp.(-abs.(x) .^ beta[b]) * rescale[b]
+        p = p'./sum(p);
 
         # calc KL divergences
-        kl = sum(bsxfun(@times,p,bsxfun(@minus,log(p),logq(1:end-1,:)))) + log(m);
+        kl = sum((p' .* (log.(p)' .- logq[(1:end-1),:])), dims=1) .+ log(m)
 
         # update optimal parameters
-        [min_val,idx] = min(kl);
+        min_val = minimum(kl)
+        idx = argmin(kl) # alternative: findmin
         if min_val < opt_val
-            opt_val = min_val;
-            opt_beta = beta(b);
-            opt_bounds = bounds;
-            opt_lu = [X1(idx) X1(idx)+X(m,idx)];
+            opt_val = min_val
+            opt_beta = beta[b]
+            opt_bounds = bounds
+            # note to myself: this is not how I should be using the CartesianIndex, is it?
+            opt_lu = (X1[Int64(idx[1])], X1[idx].+X[Int64(m),Int64(idx[1])])
         end
     end
 end
 
-% recover distribution parameters at optimum
-alpha = (opt_lu(2)-opt_lu(1))/diff(opt_bounds);
-mu = opt_lu(1)-opt_bounds(1)*alpha;
-beta = opt_beta;
+# recover distribution parameters at optimum
+alpha = (opt_lu[2]-opt_lu[1])./diff(opt_bounds)
+mu = opt_lu[1]-opt_bounds[1]*alpha[1]
+beta = opt_beta
 
-% calculate the distribution's standard deviation from alpha and beta
-sig = sqrt((alpha^2)*gamma(3/beta)/gamma(1/beta));
+# calculate the distribution's standard deviation from alpha and beta
+sig = sqrt.((alpha.^2) * gamma(3/beta) / gamma(1/beta))
 
 # is this how we define a tuple?
 return (mu,sig,alpha,beta)
