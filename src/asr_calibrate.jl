@@ -165,18 +165,19 @@ function asr_calibrate(X, srate)
   X = broadcast(abs, (X' * V))
 
   # for every channel, compute rms and stats to define the threshold matrix
-  for c in [C:-1:1]
-    c = 1
-      # compute RMS amplitude for each window...
+  for c in C:-1:1
+    # compute RMS amplitude for each window...
     rms = X[:, c] .^ 2
     indices = round.([1:(N * (1 - window_overlap)):(S - N);])' .+ [0:(N-1);]
     rms = sqrt.(sum(rms[Int.(indices)], dims = 1) ./ N)
-      # fit a distribution to the clean part
+    # fit a distribution to the clean part
+    #FIXME when we reach this point, X is not exactly the same as in Matlab anymore (very small difference)
     out = fit_eeg_distribution(rms, min_clean_fraction, max_dropout_fraction)
-    out[0] = mu[c]
-    out[1] = sig[c]
+    mu[c] = out[0]
+    sig[c] = out[1]
   end
 
+  # check dimensions here
   T = diag(mu + cutoff * sig) * V'
   return T
 

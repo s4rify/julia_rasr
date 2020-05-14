@@ -31,17 +31,17 @@ A = [1.0000000000000000, -1.7008039639301735, ...
 Y = filter(B,A,double(X),[],2);
 
 % estimate a covariance matrix
-U = (1/S) * (Y*Y')
+U = (1/S) * (Y*Y');
 
 % decompose mixing matrix
-[V,D] = eig(U)
+[V,D] = eig(U);
 
 % project input data into component space
-Y = abs(Y'*V)
+Y = abs(Y'*V);
 % switch to X again for stepping manually through fit_eeg_distr
 X=Y;
 % for debugging, test only one channel
-for c = 1
+for c =  C:-1:1
     % compute RMS amplitude for each window...
     rms = X(:,c).^2;
     rms = sqrt(sum(rms(bsxfun(@plus,round(1:N*(1-window_overlap):S-N),(0:N-1)')))/N);

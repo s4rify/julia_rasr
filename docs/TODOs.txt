@@ -1,0 +1,5 @@
+TODOS
+- equalize workflow between Matlab and Atom: which scripts to start and which functions to enter
+- add plotting routines to check data
+- maybe write unit tests?
+- bugfix in julia_asr and also matlab asr

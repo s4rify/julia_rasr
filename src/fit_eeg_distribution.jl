@@ -82,17 +82,17 @@ function fit_eeg_distribution(X, min_clean_fraction, max_dropout_fraction)
 
     opt_val = Inf
 # for each interval width...
-    for m in [n .* collect(range(max_width[1], step = -step_sizes[2], stop = min_width[1]))]
+    for m in round.(n .* collect(range(max_width[1], step = -step_sizes[2], stop = min_width[1])))
     # scale and bin the data in the intervals
         nbins = round.(3 * log2.(1 .+ m / 2))
-        H = X[Int64.(1:m), :] .* (nbins ./ X[Int64(m), :])'
+        H = X[Int64.(1:m), :]' .* (nbins ./ X[Int64(m), :])
 
     # the histogram counts are computed in a loop here
         edges = [0:nbins-1; Inf]
     #all_weights = Array{Float64, 2}(undef, size(edges)[1], size(H)[2])
-        logq = Array{Float64,2}(undef, size(edges)[1], size(H)[2])
-        for w = 1:size(H)[2]
-            hw = fit(Histogram, H[:, w], edges)
+        logq = Array{Float64,2}(undef, size(edges)[1], size(H)[1])
+        for w = 1:size(H)[1]
+            hw = fit(Histogram, H[w, :], edges)
         # the implementation of histc in matlab slightly varies from julia and returns one extra value which
         # is always zero here bc. the last edge is defined as Inf. Just add this extra zero manually for now
             push!(hw.weights, 0.0)
@@ -109,7 +109,7 @@ function fit_eeg_distribution(X, min_clean_fraction, max_dropout_fraction)
             p = p' ./ sum(p)
 
         # calc KL divergences
-            kl = sum((p' .* (log.(p)' .- logq[(1:end-1), :])), dims = 1) .+ log(m)
+            kl = sum((p' .* (log.(p)' .- logq[(1:end-1),:])), dims = 1) .+ log(m)
 
         # update optimal parameters
             min_val = minimum(kl)
@@ -118,8 +118,7 @@ function fit_eeg_distribution(X, min_clean_fraction, max_dropout_fraction)
                 opt_val = min_val
                 opt_beta = beta[b]
                 opt_bounds = bounds
-            # note to myself: this is not how I should be using the CartesianIndex, is it?
-                opt_lu = (X1[Int64(idx[1])], X1[idx] .+ X[Int64(m), Int64(idx[1])])
+                opt_lu = (X1[idx[1]], X1[idx[1]] .+ X[Int64(m), idx[1]])
             end
         end
     end

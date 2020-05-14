@@ -103,7 +103,7 @@ for m = round(n*(max_width:-step_sizes(2):min_width))
         p=p'/sum(p);
         
         % calc KL divergences
-        kl = sum(bsxfun(@times,p,bsxfun(@minus,log(p),logq(1:end-1,:)))) + log(m);
+          kl = sum(bsxfun(@times,p,bsxfun(@minus,log(p),logq(1:end-1,:)))) + log(m);
         
         % update optimal parameters
         [min_val,idx] = min(kl);

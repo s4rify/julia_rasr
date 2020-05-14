@@ -92,3 +92,12 @@
 # Riemannian processing was added to the processing function in the estimation of the covariance matrix and
 # the averaging of covariance matrices. For more details please refer to the paper Blum et al. 2018 (in
 # preparation).
+
+
+# import libraries
+using PosDefManifold
+using DSP
+#using Plots
+using LinearAlgebra
+
+function asr_process(data, srate, T)
