@@ -21,7 +21,13 @@ function test_asr()
 
     # fix this value for now
         srate = 250
-        T = asr_calibrate(X, srate)
+        # returns (T,M,B,A)
+        cal_state = asr_calibrate(X, srate)
+        T = cal_state[1]
+        M = cal_state[2]
+        B = cal_state[3]
+        A = cal_state[4]
+        #TODO how to define tuples with named entries to call cal_state.T
 end
 
 # start debugger

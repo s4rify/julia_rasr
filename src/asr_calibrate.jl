@@ -184,6 +184,6 @@ function asr_calibrate(X, srate)
   # assemble output
   T = diag(mu + cutoff * sig) .* V'
   T = T * -1 # correct for sign of the eigenvectors (in this testcase flipped compared to Matlab)
-  return T
+  return (T,M,B,A)
 
 end
