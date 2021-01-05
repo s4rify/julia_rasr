@@ -54,6 +54,11 @@ function fit_eeg_distribution(X, min_clean_fraction, max_dropout_fraction)
     X = sort(X[:])
     n = length(X)
 
+# declare opt_lu
+    opt_lu = Array{Float64,2}(undef, 1,2)
+    opt_bounds = Array{Float64,2}(undef, 1,2)
+    opt_beta = Inf
+
 # calc z bounds for the truncated standard generalized Gaussian pdf and pdf rescaler
     for b = 1:length(beta)
         y = sign.(quants .- 0.5) .* (2 .* quants .- 1)
@@ -125,7 +130,7 @@ function fit_eeg_distribution(X, min_clean_fraction, max_dropout_fraction)
 
 # recover distribution parameters at optimum
     alpha = (opt_lu[2] - opt_lu[1]) ./ diff(opt_bounds)
-    mu = opt_lu[1] - opt_bounds[1] * alpha[1]
+    mu = opt_lu[1] .- opt_bounds[1] .* alpha
     beta = opt_beta
 
 # calculate the distribution's standard deviation from alpha and beta

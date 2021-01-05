@@ -1,4 +1,8 @@
 
+# in VS Code
+# execute code with Alt+Enter
+# run with Ctrl+F5
+
 # import csv file created in matlab and saved for testing purposes
 using CSV
 using DataFrames
@@ -11,7 +15,7 @@ function test_asr()
         println(filepath)
     # import data
         println("reading file..")
-        X = CSV.read(filepath; header = false)
+        X = CSV.read(filepath, DataFrame, header = false)
     # and convert to array
         X = convert(Array, X)
 

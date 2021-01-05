@@ -56,25 +56,16 @@ quants = [0.022 0.6];
 step_sizes = [0.01 0.01];
 beta = 1.7:0.15:3.5;
 
+
 % sort data so we can access quantiles directly
 X = double(sort(X(:)));
 n = length(X);
 
 % calc z bounds for the truncated standard generalized Gaussian pdf and pdf rescaler
-for b=1:length(beta) 
-    ypsilon = sign(quants-1/2).*(2*quants-1)
-    aa = 1/beta(b)
-   
-    zbounds{b} = sign(quants-1/2) .* gammaincinv(ypsilon,aa) .^ (1/beta(b)); %#ok<*AGROW>
+for b=1:length(beta)    
+    zbounds{b} = sign(quants-1/2).*gammaincinv(sign(quants-1/2).*(2*quants-1),1/beta(b)).^(1/beta(b)); %#ok<*AGROW>
     rescale(b) = beta(b)/(2*gamma(1/beta(b)));
 end
-
-
-% % calc z bounds for the truncated standard generalized Gaussian pdf and pdf rescaler
-% for b=1:length(beta)    
-%     zbounds{b} = sign(quants-1/2).*gammaincinv(sign(quants-1/2).*(2*quants-1),1/beta(b)).^(1/beta(b)); %#ok<*AGROW>
-%     rescale(b) = beta(b)/(2*gamma(1/beta(b)));
-% end
 
 % determine the quantile-dependent limits for the grid search
 lower_min = min(quants);                    % we can generally skip the tail below the lower quantile
@@ -82,9 +73,8 @@ max_width = diff(quants);                   % maximum width is the fit interval 
 min_width = min_clean_fraction*max_width;   % minimum width of the fit interval, as fraction of data
 
 % get matrix of shifted data ranges
-X = X(bsxfun(@plus,(1 : round(n*max_width))',round(n*(lower_min:step_sizes(1) : lower_min+max_dropout_fraction))));
-X1 = X(1,:); 
-X = bsxfun(@minus,X,X1);
+X = X(bsxfun(@plus,(1:round(n*max_width))',round(n*(lower_min:step_sizes(1):lower_min+max_dropout_fraction))));
+X1 = X(1,:); X = bsxfun(@minus,X,X1);
 
 opt_val = Inf;
 % for each interval width...
@@ -99,11 +89,10 @@ for m = round(n*(max_width:-step_sizes(2):min_width))
         bounds = zbounds{b};
         % evaluate truncated generalized Gaussian pdf at bin centers
         x = bounds(1)+(0.5:(nbins-0.5))/nbins*diff(bounds);
-        p = exp(-abs(x).^beta(b))*rescale(b); 
-        p=p'/sum(p);
+        p = exp(-abs(x).^beta(b))*rescale(b); p=p'/sum(p);
         
         % calc KL divergences
-          kl = sum(bsxfun(@times,p,bsxfun(@minus,log(p),logq(1:end-1,:)))) + log(m);
+        kl = sum(bsxfun(@times,p,bsxfun(@minus,log(p),logq(1:end-1,:)))) + log(m);
         
         % update optimal parameters
         [min_val,idx] = min(kl);

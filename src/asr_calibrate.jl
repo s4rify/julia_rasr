@@ -100,7 +100,6 @@
 # import libraries
 using PosDefManifold
 using DSP
-#using Plots
 using LinearAlgebra
 
 function asr_calibrate(X, srate)
@@ -156,13 +155,18 @@ function asr_calibrate(X, srate)
   U = (1 / S) * (X * X')
 
   # mixing matrix is equivalent to using the covariance matrix directly
-  # M = sqrt(U)
+  M = sqrt(U)
 
   # decompose covariance matrix using PCA (this could be nonlinear decomposition as well)
-  V = eigvecs(U)
+  V = eigvecs(M)
 
-  # project input data into component space (TODO why abs here, squaring anyway afterwards..)
+  # project input data into component space
   X = broadcast(abs, (X' * V))
+
+  # initialize arrays for distribution estimation
+  out = Array{Float64,2}(undef, 1,2)
+  mu = Array{Float64,2}(undef, 1,C)
+  sig = Array{Float64,2}(undef, 1,C)
 
   # for every channel, compute rms and stats to define the threshold matrix
   for c in C:-1:1
@@ -171,14 +175,15 @@ function asr_calibrate(X, srate)
     indices = round.([1:(N * (1 - window_overlap)):(S - N);])' .+ [0:(N-1);]
     rms = sqrt.(sum(rms[Int.(indices)], dims = 1) ./ N)
     # fit a distribution to the clean part
-    #FIXME when we reach this point, X is not exactly the same as in Matlab anymore (very small difference)
+    #FIXME X is not exactly the same as in Matlab anymore (very small difference)
     out = fit_eeg_distribution(rms, min_clean_fraction, max_dropout_fraction)
-    mu[c] = out[0]
-    sig[c] = out[1]
+    mu[c] = out[1][1]
+    sig[c] = out[2][1]
   end
 
-  # check dimensions here
-  T = diag(mu + cutoff * sig) * V'
+  # assemble output
+  T = diag(mu + cutoff * sig) .* V'
+  T = T * -1 # correct for sign of the eigenvectors (in this testcase flipped compared to Matlab)
   return T
 
 end

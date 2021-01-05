@@ -1,8 +1,14 @@
 % asr julia tests
 
+%% call asr_calibrate with test data
+
 % make sure we use the same input
 X = csvread('C:\Users\sarah\Documents\PhD\Julia_rASR\test\data.csv');
 srate = 250;
+cal_state = asr_calibrate(X, srate);
+
+
+%% This is the step-wise calibration
 
 % define some default parameters
 cutoff = 3;
@@ -40,7 +46,7 @@ U = (1/S) * (Y*Y');
 Y = abs(Y'*V);
 % switch to X again for stepping manually through fit_eeg_distr
 X=Y;
-% for debugging, test only one channel
+
 for c =  C:-1:1
     % compute RMS amplitude for each window...
     rms = X(:,c).^2;
